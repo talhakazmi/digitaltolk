@@ -45,7 +45,7 @@ class BookingController extends Controller
             $response = $this->repository->getAll($request);
         }
 
-        return response($response);
+        return customResponse($response, 'All Jobs');
     }
 
     /**
@@ -56,7 +56,7 @@ class BookingController extends Controller
     {
         $job = $this->repository->with('translatorJobRel.user')->find($id);
 
-        return response($job);
+        return customResponse($job, 'Job Detail');
     }
 
     /**
@@ -69,7 +69,8 @@ class BookingController extends Controller
 
         $response = $this->repository->store($request->__authenticatedUser, $data);
 
-        return response($response);
+
+        return customResponse($response, 'Job Created',  true, 201);
 
     }
 
@@ -84,7 +85,7 @@ class BookingController extends Controller
         $cuser = $request->__authenticatedUser;
         $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
 
-        return response($response);
+        return customResponse($response, 'Job Updated');
     }
 
     /**
@@ -98,7 +99,7 @@ class BookingController extends Controller
 
         $response = $this->repository->storeJobEmail($data);
 
-        return response($response);
+        return customResponse($response, 'Immediate Email');
     }
 
     /**
@@ -110,10 +111,11 @@ class BookingController extends Controller
         if($user_id = $request->get('user_id')) {
 
             $response = $this->repository->getUsersJobsHistory($user_id, $request);
-            return response($response);
+
+            return customResponse($response, 'User History');
         }
 
-        return null;
+        return customResponse(null, 'User History');
     }
 
     /**
@@ -127,7 +129,7 @@ class BookingController extends Controller
 
         $response = $this->repository->acceptJob($data, $user);
 
-        return response($response);
+        return customResponse($response, 'Job Accepted');
     }
 
     public function acceptJobWithId(Request $request)
@@ -137,7 +139,7 @@ class BookingController extends Controller
 
         $response = $this->repository->acceptJobWithId($data, $user);
 
-        return response($response);
+        return customResponse($response, 'Job Accepted');
     }
 
     /**
@@ -151,7 +153,7 @@ class BookingController extends Controller
 
         $response = $this->repository->cancelJobAjax($data, $user);
 
-        return response($response);
+        return customResponse($response, 'Job Cancelled');
     }
 
     /**
@@ -164,7 +166,7 @@ class BookingController extends Controller
 
         $response = $this->repository->endJob($data);
 
-        return response($response);
+        return customResponse($response, 'Job Ended');
 
     }
 
@@ -174,7 +176,7 @@ class BookingController extends Controller
 
         $response = $this->repository->customerNotCall($data);
 
-        return response($response);
+        return customResponse($response, 'Customer Not Call');
 
     }
 
@@ -189,57 +191,34 @@ class BookingController extends Controller
 
         $response = $this->repository->getPotentialJobs($user);
 
-        return response($response);
+        return customResponse($response, 'Potential Jobs');
     }
 
     public function distanceFeed(Request $request)
     {
         $data = $request->all();
 
-        if (isset($data['distance']) && $data['distance'] != "") {
-            $distance = $data['distance'];
-        } else {
-            $distance = "";
-        }
-        if (isset($data['time']) && $data['time'] != "") {
-            $time = $data['time'];
-        } else {
-            $time = "";
-        }
-        if (isset($data['jobid']) && $data['jobid'] != "") {
-            $jobid = $data['jobid'];
+        $distance = (isset($data['distance'])) ? $data['distance'] : "";
+
+        $time = (isset($data['time'])) ? $data['time'] : "";
+
+        $jobid = (isset($data['jobid'])) ? $data['jobid'] : "";
+
+        $session = (isset($data['session_time'])) ? $data['session_time'] : "";
+
+        if ($data['flagged'] == 'true' && $data['admincomment'] == '') {
+            return customResponse(null, 'Please, add comment');
         }
 
-        if (isset($data['session_time']) && $data['session_time'] != "") {
-            $session = $data['session_time'];
-        } else {
-            $session = "";
-        }
+        $flagged = ($data['flagged'] == 'true') ? 'yes' : 'no';
 
-        if ($data['flagged'] == 'true') {
-            if($data['admincomment'] == '') return "Please, add comment";
-            $flagged = 'yes';
-        } else {
-            $flagged = 'no';
-        }
-        
-        if ($data['manually_handled'] == 'true') {
-            $manually_handled = 'yes';
-        } else {
-            $manually_handled = 'no';
-        }
+        $manually_handled = ($data['manually_handled'] == 'true') ? 'yes' : 'no';
 
-        if ($data['by_admin'] == 'true') {
-            $by_admin = 'yes';
-        } else {
-            $by_admin = 'no';
-        }
+        $by_admin = ($data['by_admin'] == 'true') ? 'yes' : 'no';
 
-        if (isset($data['admincomment']) && $data['admincomment'] != "") {
-            $admincomment = $data['admincomment'];
-        } else {
-            $admincomment = "";
-        }
+        $admincomment = (isset($data['admincomment'])) ? $data['admincomment'] : "";
+
+
         if ($time || $distance) {
 
             $affectedRows = Distance::where('job_id', '=', $jobid)->update(array('distance' => $distance, 'time' => $time));
@@ -251,7 +230,7 @@ class BookingController extends Controller
 
         }
 
-        return response('Record updated!');
+        return customResponse(null, 'Record Updated');
     }
 
     public function reopen(Request $request)
@@ -259,7 +238,7 @@ class BookingController extends Controller
         $data = $request->all();
         $response = $this->repository->reopen($data);
 
-        return response($response);
+        return customResponse($response, 'Potential Jobs');
     }
 
     public function resendNotifications(Request $request)
